@@ -60,6 +60,19 @@ def entropy(data):
   ent = np.sum(-a*np.log2(a+1e-9))
   return ent
 
+def cate_entropy(df,attr,y):
+  '''
+  calculate and return categorical entropy of attribute 'attr' of data 'df'
+  '''
+  a=df[[attr,y]].value_counts().to_dict()
+  # print(a)
+  b=df[attr].value_counts().to_dict()
+  # print(b)
+  c=df[y].unique()
+  a_key = a.keys()
+  e = sum(b[i]/df.shape[0]*sum(-a[(i,j)]/b[i]*math.log(a[(i,j)]/b[i],2) for j in c if (i,j) in a_key) for i in b.keys())
+  return e
+
 def nume_entropy(df,attr,y,candidate):
     d_size = df.shape[0]
     left_dat = df[df[attr]<=candidate][y]
@@ -81,12 +94,12 @@ def nume_best_split_value(df,attr,y):
     #   return nume_list[0]
 
     for i in range(2,10):
-    pos = int(i*d_size/10)-1
-    candidate = (nume_list[pos]+nume_list[pos+1])/2
-    curr_entropy = nume_entropy(df,attr,y,candidate)
-    if curr_entropy < best_split_entropy:
-        best_split_val = candidate
-        best_split_entropy = curr_entropy
+      pos = int(i*d_size/10)-1
+      candidate = (nume_list[pos]+nume_list[pos+1])/2
+      curr_entropy = nume_entropy(df,attr,y,candidate)
+      if curr_entropy < best_split_entropy:
+          best_split_val = candidate
+          best_split_entropy = curr_entropy
     # min_key = min(entropy_dict, key=entropy_dict.get)
     return best_split_val
 
@@ -96,39 +109,39 @@ def best_split_measure(df,y):
     best_split_attr = attr_list[0]
     best_split_entropy = 0
     if df[best_split_attr].dtype=='O':
-    best_split_entropy = cate_entropy(df,best_split_attr,y)
+      best_split_entropy = cate_entropy(df,best_split_attr,y)
     else :
-    nume_split = nume_best_split_value(df,best_split_attr,y)
+      nume_split = nume_best_split_value(df,best_split_attr,y)
     best_split_entropy = nume_entropy(df,best_split_attr,y,nume_split)
 
     # find attribute with minimum entropy
     for e in attr_list[1:]:
-    if df[e].dtype=='O':
-        curr_entropy = cate_entropy(df,e,y)
-    else :
-        nume_split = nume_best_split_value(df,e,y)
-        curr_entropy = nume_entropy(df,e,y,nume_split)
+      if df[e].dtype=='O':
+          curr_entropy = cate_entropy(df,e,y)
+      else :
+          nume_split = nume_best_split_value(df,e,y)
+          curr_entropy = nume_entropy(df,e,y,nume_split)
 
-    if curr_entropy < best_split_entropy:
-        best_split_attr = e
-        best_split_entropy = curr_entropy
-    # print(entropy_dict)
+      if curr_entropy < best_split_entropy:
+          best_split_attr = e
+          best_split_entropy = curr_entropy
+
     return best_split_attr
 
 def stop_criteria(df,y):
     '''
-    stop criteria condition for recursive partitioning
+    stopping criteria condition for recursive partitioning
     '''
     stop = False
     c = df[y].unique()
     if(len(c)==1):
-    stop = True
+      stop = True
     return stop
 
 def RPA(node,df,y,max_depth = 7, max_features = None):
-    '''
-    recursive partitioning algorithm for building decision tree
-    '''
+  '''
+  recursive partitioning algorithm for building decision tree
+  '''
   # return leaf node if there is only 1 distinct value in class column
   if stop_criteria(df,y) == True:
     c = df[y].unique()[0]
@@ -214,10 +227,10 @@ def train_test_split(data, class_col, min_class=None, maj_class=None, test_size=
     '''
     divide data into training set and testing set by maintain the ratio of minority instances and majority instances
     '''
-    #divide data into minor data and major data
+    # define minor class and major class
     if min_class == None or maj_class == None:
-    min_class, maj_class = minor_major_class(data, class_col)
-
+      min_class, maj_class = minor_major_class(data, class_col)
+    #divide data into minor data and major data
     min_data, maj_data = data[data[class_col] == min_class],data[data[class_col]==maj_class]
 
     #shuffle data
@@ -239,17 +252,17 @@ def predict(tree,df):
     '''
 
     if tree.is_leaf():
-    return tree.name
+      return tree.name
     cond = df[tree.name]
     if isinstance(cond,str):
-    # print(cond)
-    pred_class = predict(tree.children[cond],df)
+      pred_class = predict(tree.children[cond],df)
     else :
-    threshold = tree.split_value
-    if (cond<threshold):
-        pred_class = predict(tree.children['left'],df)
-    else:
-        pred_class = predict(tree.children['right'],df)
+      threshold = tree.split_value
+      if (cond<threshold):
+          pred_class = predict(tree.children['left'],df)
+      else:
+          pred_class = predict(tree.children['right'],df)
+
     return pred_class
 
 def predict_all(node,df):
@@ -259,8 +272,8 @@ def predict_all(node,df):
 
     pred = []
     for i in range(df.shape[0]):
-    p = predict(node,df.iloc[i])
-    pred.append(p)
+      p = predict(node,df.iloc[i])
+      pred.append(p)
 
     return pred
 
@@ -397,23 +410,23 @@ def MCE_best_split_measure(df,y):
     best_split_attr = attr_list[0]
     best_split_entropy = 0
     if df[best_split_attr].dtypes=='O':
-    best_split_entropy = cate_entropy(df,best_split_attr,y)
+      best_split_entropy = cate_entropy(df,best_split_attr,y)
     else :
-    nume_split = nume_best_split_value(df,best_split_attr,y)
-    best_split_entropy = nume_entropy(df,best_split_attr,y,nume_split)
+      nume_split = nume_best_split_value(df,best_split_attr,y)
+      best_split_entropy = nume_entropy(df,best_split_attr,y,nume_split)
 
     # find attribute with minimum entropy (MCE for numerical)
     for e in attr_list[1:]:
-    if df[e].dtypes=='O':
-        curr_entropy = cate_entropy(df,e,y)
-    else :
-        nume_split = MCE(df,e,y)
-        curr_entropy = nume_entropy(df,e,y,nume_split)
+      if df[e].dtypes=='O':
+          curr_entropy = cate_entropy(df,e,y)
+      else :
+          nume_split = MCE(df,e,y)
+          curr_entropy = nume_entropy(df,e,y,nume_split)
 
-    if curr_entropy < best_split_entropy:
-        best_split_attr = e
-        best_split_entropy = curr_entropy
-    # print(entropy_dict)
+      if curr_entropy < best_split_entropy:
+          best_split_attr = e
+          best_split_entropy = curr_entropy
+
     return best_split_attr
 
 def MCDT(node,df,y,max_depth = 7, max_features = None):
@@ -422,33 +435,32 @@ def MCDT(node,df,y,max_depth = 7, max_features = None):
     '''
     # return leaf node if there is only 1 distinct value in class column
     if stop_criteria(df,y) == True:
-    c = df[y].unique()[0]
-    node.name = c
-    return
+      c = df[y].unique()[0]
+      node.name = c
+      return
 
     # return leaf node if tree reach max depth
     if max_depth == 0:
-    class_dict = df[y].value_counts().to_dict()
-    # print(class_dict)
-    node.name = max(class_dict, key=class_dict.get)
-    return
+      class_dict = df[y].value_counts().to_dict()
+      node.name = max(class_dict, key=class_dict.get)
+      return
 
     # drop column with 1 distinct value (except column of class)
     for col in df.drop(y,axis=1).columns:
-    if len(df[col].unique()) == 1:
-        df = df.drop(col,axis=1)
+      if len(df[col].unique()) == 1:
+          df = df.drop(col,axis=1)
 
     # if there is no attribute left, then return leaf node with majority
     if len(df.columns)==1:
-    class_dict = df[y].value_counts().to_dict()
-    node.name = max(class_dict, key=class_dict.get)
-    return
+      class_dict = df[y].value_counts().to_dict()
+      node.name = max(class_dict, key=class_dict.get)
+      return
 
     # define number of features to consider
     if max_features == None:
-    max_features = int(0.5*(len(df.columns)-1))
+      max_features = int(0.5*(len(df.columns)-1))
     elif isinstance(max_features, float):
-    max_features = int(max_features*(len(df.columns)-1))
+      max_features = int(max_features*(len(df.columns)-1))
 
     # random features
     sample_df = df.drop(y,axis=1).sample(n=max_features, axis='columns')
@@ -459,32 +471,27 @@ def MCDT(node,df,y,max_depth = 7, max_features = None):
     # print(bsm)
     node.name=bsm
     if df[bsm].dtypes == 'O':
-    for e in df[bsm]:
-        split_df = df[df[bsm]==e]
-        child_node = Node('child')
-        node.add_child(e,child_node)
-        RPA(child_node,split_df,y,max_depth-1)
+      for e in df[bsm]:
+          split_df = df[df[bsm]==e]
+          child_node = Node('child')
+          node.add_child(e,child_node)
+          RPA(child_node,split_df,y,max_depth-1)
     else:
 
-    threshold = nume_best_split_value(df,bsm,y)
-    # print('-----------------')
-    # print(bsm,':',threshold)
-    # print(threshold)
-    # print(df[bsm].to_list())
-    node.split_value = threshold
-    left_df = df[df[bsm]<=threshold]
-    right_df = df[df[bsm]>threshold]
-    # if left_df or right_df is empty, return majority
-    if len(left_df) == 0 or len(right_df) == 0:
-        class_dict = df[y].value_counts().to_dict()
-        node.name = max(class_dict, key=class_dict.get)
-        node.split_value = None
-        return
-    # print('left df size:',len(left_df),',right df size:',len(right_df))
-    else :
-        left_node = Node('left')
-        right_node = Node('right')
-        node.add_child('left',left_node)
-        node.add_child('right',right_node)
-        RPA(left_node,left_df,y,max_depth-1)
-        RPA(right_node,right_df,y,max_depth-1)
+      threshold = nume_best_split_value(df,bsm,y)
+      node.split_value = threshold
+      left_df = df[df[bsm]<=threshold]
+      right_df = df[df[bsm]>threshold]
+      # if left_df or right_df is empty, return majority
+      if len(left_df) == 0 or len(right_df) == 0:
+          class_dict = df[y].value_counts().to_dict()
+          node.name = max(class_dict, key=class_dict.get)
+          node.split_value = None
+          return
+      else :
+          left_node = Node('left')
+          right_node = Node('right')
+          node.add_child('left',left_node)
+          node.add_child('right',right_node)
+          RPA(left_node,left_df,y,max_depth-1)
+          RPA(right_node,right_df,y,max_depth-1)
