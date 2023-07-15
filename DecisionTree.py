@@ -112,7 +112,7 @@ def best_split_measure(df,y):
       best_split_entropy = cate_entropy(df,best_split_attr,y)
     else :
       nume_split = nume_best_split_value(df,best_split_attr,y)
-    best_split_entropy = nume_entropy(df,best_split_attr,y,nume_split)
+      best_split_entropy = nume_entropy(df,best_split_attr,y,nume_split)
 
     # find attribute with minimum entropy
     for e in attr_list[1:]:
